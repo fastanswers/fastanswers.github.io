@@ -2,8 +2,69 @@
         let currentTab = 'text';
         let cachedWikiData = null; 
         let cachedImages = null; 
-        let cachedVideos = null; // Separate cache for video results
+        let cachedVideos = null; 
         let lastQuery = '';
+        const MAX_HISTORY = 5;
+
+        // Initialize History
+        window.addEventListener('DOMContentLoaded', () => {
+            renderHistory();
+        });
+
+        // --- History Logic ---
+        function getHistory() {
+            try {
+                const stored = localStorage.getItem('fastAnswersHistory');
+                return stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                console.error("Local storage not available", e);
+                return [];
+            }
+        }
+
+        function addToHistory(query) {
+            if (!query) return;
+            try {
+                let history = getHistory();
+                // Remove duplicates of the current query (case insensitive)
+                history = history.filter(item => item.toLowerCase() !== query.toLowerCase());
+                // Add new query to the front
+                history.unshift(query);
+                // Maintain max size
+                if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
+                
+                localStorage.setItem('fastAnswersHistory', JSON.stringify(history));
+                renderHistory();
+            } catch (e) {
+                console.error("Could not save to history", e);
+            }
+        }
+
+        function clearHistory() {
+            localStorage.removeItem('fastAnswersHistory');
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('recentSearchesList');
+            const history = getHistory();
+
+            if (history.length === 0) {
+                // Placeholder / Default items if empty
+                list.innerHTML = `
+                    <a href="#" onclick="triggerSearch('Hi')" class="block hover:text-blue-800">Hi</a>
+                    <a href="#" onclick="triggerSearch('Overwatering plants')" class="block hover:text-blue-800">Overwatering plants</a>
+                    <a href="#" onclick="triggerSearch('Quantum Mechanics')" class="block hover:text-blue-800">Quantum Mechanics</a>
+                `;
+                return;
+            }
+
+            list.innerHTML = history.map(term => {
+                // Escape single quotes for HTML attribute safety
+                const safeTerm = term.replace(/'/g, "\\'"); 
+                return `<a href="#" onclick="triggerSearch('${safeTerm}')" class="block hover:text-blue-800">${term}</a>`;
+            }).join('');
+        }
 
         // --- Web Fetching Logic ---
 
@@ -62,11 +123,9 @@
                 .slice(0, 5);
         }
 
-        // Video Fetch (New)
+        // Video Fetch
         async function searchWikipediaVideos(query) {
-            // Search specifically for video files (File namespace + 'video' type hint)
             const url = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}%20filetype:video&gsrnamespace=6&gsrlimit=10&prop=imageinfo&iiprop=url|mime|thumb&iiurlwidth=400&format=json&origin=*`;
-            
             const res = await fetch(url);
             const data = await res.json();
             
@@ -107,12 +166,22 @@
             triggerSearch();
         }
 
-        async function triggerSearch() {
-            const query = document.getElementById('queryInput').value.trim();
+        async function triggerSearch(queryOverride) {
+            const input = document.getElementById('queryInput');
+            
+            // Handle click from recent history (override input value)
+            if (typeof queryOverride === 'string') {
+                input.value = queryOverride;
+            }
+
+            const query = input.value.trim();
             const resultsContainer = document.getElementById('resultsContainer');
             
             if (!query) return;
             
+            // Save to history immediately
+            addToHistory(query);
+
             if (query !== lastQuery) {
                 cachedWikiData = null;
                 cachedImages = null;
@@ -198,7 +267,6 @@
             } 
         }
 
-        // Unified Render for Images and Videos
         function renderMediaGrid(items, type) {
             const contentDiv = document.getElementById('resultContent');
             
