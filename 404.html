@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found - FastAnswers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Reuse the exact styles from the main app for consistency */
+        .sketch-box {
+            border: 2px solid black;
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 0 #000;
+            transition: all 0.1s ease-in-out;
+        }
+        .sketch-box:hover {
+            box-shadow: 6px 6px 0 0 #000;
+            transform: translate(-2px, -2px);
+        }
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="sketch-box bg-white p-12 text-center max-w-lg w-full relative overflow-hidden">
+        <!-- Simple decorative circles to add to the sketch feel -->
+        <div class="absolute -top-10 -right-10 w-32 h-32 border-2 border-black rounded-full opacity-10"></div>
+        <div class="absolute -bottom-10 -left-10 w-24 h-24 border-2 border-black rounded-full opacity-10"></div>
+
+        <h1 class="text-6xl font-black mb-2 tracking-tighter">404</h1>
+        <h2 class="text-2xl font-bold mb-6 border-b-2 border-black inline-block pb-1">Missing</h2>
+        
+        <p class="text-xl font-medium mb-8 leading-relaxed">
+            The page is gone. <br> It is not here anymore.
+        </p>
+
+        <!-- Links back to your main index.html file -->
+        <a href="index.html" class="inline-block sketch-box bg-black text-white text-xl font-bold py-3 px-10 hover:bg-gray-800 hover:text-white transition duration-150 no-underline">
+            Go Home
+        </a>
+    </div>
+
+</body>
+</html>
