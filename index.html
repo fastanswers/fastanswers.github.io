@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast Answers - Video Popup</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles to force the 'hand-drawn', thick-border look */
+        .sketch-box {
+            border: 2px solid black;
+            border-radius: 12px;
+            box-shadow: 4px 4px 0 0 #000;
+            transition: all 0.1s ease-in-out;
+        }
+        .sketch-box:hover {
+            box-shadow: 6px 6px 0 0 #000;
+            transform: translate(-2px, -2px);
+        }
+        .tab-button {
+            border: 2px solid black;
+            border-bottom: none; 
+            border-radius: 8px 8px 0 0;
+            box-shadow: 4px -0px 0 0 #000; 
+            padding: 8px 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #fefefe;
+            outline: none;
+            transition: background-color 0.2s;
+        }
+        .tab-button:hover {
+            background-color: #f0f0f0;
+        }
+        .tab-button.active {
+            background-color: #fff;
+            box-shadow: none; 
+            position: relative;
+            top: 2px; 
+            z-index: 10;
+            border-bottom: 2px solid white; 
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            backdrop-filter: blur(2px);
+        }
+        
+        body { font-family: 'Inter', sans-serif; }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+            border-top-color: #000;
+            animation: spin 1s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center pt-16 pb-10">
+
+    <h1 class="text-3xl font-bold mb-10">FastAnswers</h1>
+
+    <!-- Search Input Area -->
+    <div class="flex flex-col items-center w-full max-w-xl px-4">
+        <input 
+            type="text" 
+            id="queryInput" 
+            placeholder="Type Anything" 
+            class="sketch-box w-full text-xl p-3 mb-6 focus:ring-0 focus:outline-none placeholder-gray-400"
+            size="50"
+        >
+        <button 
+            onclick="triggerSearch()" 
+            class="sketch-box text-xl font-bold py-2 px-12 bg-white hover:bg-gray-100 transition duration-150"
+        >
+            Search
+        </button>
+    </div>
+
+    <!-- Results Area -->
+    <div id="resultsContainer" class="w-full max-w-3xl mt-12 px-4 hidden">
+        
+        <!-- Tab Navigation -->
+        <div class="flex border-b-2 border-black relative">
+            <button onclick="switchTab('text')" id="tab-text" class="tab-button active">Text</button>
+            <button onclick="switchTab('images')" id="tab-images" class="tab-button ml-2">Images</button>
+            <button onclick="switchTab('videos')" id="tab-videos" class="tab-button ml-2">Videos</button>
+            <button onclick="switchTab('detailed')" id="tab-detailed" class="tab-button ml-auto border-l-2 border-black">Detailed</button>
+        </div>
+
+        <!-- Main Result Panel -->
+        <div class="p-6 pt-10 border-2 border-black bg-white rounded-b-xl rounded-tr-xl min-h-[200px]">
+            
+            <!-- Result Content Area -->
+            <div id="resultContent" class="text-xl font-medium mb-8">
+                <!-- Dynamic content goes here -->
+            </div>
+            
+            <div id="loadingIndicator" class="text-gray-500 font-bold items-center gap-2" style="display: none;">
+                <div class="spinner"></div> <span id="loadingText">Fetching from web...</span>
+            </div>
+
+            <!-- Useful Links Section -->
+            <div id="linksSection">
+                <h3 class="text-lg font-bold border-b border-gray-300 pb-1 mb-3 mt-8">Useful Links</h3>
+                <div id="linksDisplay" class="text-sm space-y-2">
+                    <p class="text-gray-400">Links will appear after the search.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Searches Box -->
+    <div class="w-full max-w-xl mt-16 p-4 border-2 border-black bg-white rounded-xl">
+        <h3 class="text-lg font-bold mb-3">Recent Searches</h3>
+        <div class="text-blue-600 underline space-y-1">
+            <a href="#" onclick="document.getElementById('queryInput').value='Hi'; triggerSearch();" class="block hover:text-blue-800">Hi</a>
+            <a href="#" onclick="document.getElementById('queryInput').value='Overwatering plants'; triggerSearch();" class="block hover:text-blue-800">Overwatering plants</a>
+            <a href="#" onclick="document.getElementById('queryInput').value='Quantum Mechanics'; triggerSearch();" class="block hover:text-blue-800">Quantum Mechanics</a>
+        </div>
+    </div>
+
+    <!-- Universal Media Popup Modal -->
+    <div id="mediaModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 modal-overlay p-4">
+        <div class="bg-white p-6 rounded-xl border-2 border-black shadow-[8px_8px_0_0_#000] max-w-2xl w-full relative flex flex-col items-center">
+            
+            <!-- Close Button (X) -->
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-2xl font-bold hover:text-gray-600 z-10">&times;</button>
+
+            <div class="w-full flex justify-center bg-black rounded-lg border-2 border-black mb-4 overflow-hidden relative min-h-[200px]">
+                 <!-- Image Container -->
+                 <img id="modalImage" src="" class="max-h-[50vh] w-auto object-contain hidden">
+                 <!-- Video Container -->
+                 <video id="modalVideo" controls class="max-h-[50vh] w-full object-contain hidden"></video>
+            </div>
+            
+            <div class="w-full text-center space-y-3">
+                <p class="text-lg text-gray-800">Source: <span id="modalSource" class="font-bold text-blue-600"></span></p>
+                
+                <p class="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-200 inline-block">
+                    <b>Check copyright claims from this website / content provider before using</b>
+                </p>
+                
+                <div class="mt-2">
+                    <button onclick="closeModal()" class="sketch-box bg-white text-black px-8 py-2 hover:bg-gray-100 font-bold border-2 border-black">
+                        Done
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="search.js">
+
+    </script>
+
+</body>
+</html>
